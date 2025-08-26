@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Noughts & Crosses — 3-Piece Cycle</title>
+<style>
+  :root{
+    --grid-line:#222;
+    --bg:#0f0f12;
+    --panel:#16181d;
+    --text:#f3f4f6;
+    --muted:#9aa3af;
+    --accent:#5eead4;
+    --x-color:#e11d48;
+    --o-color:#2563eb;
+    --cell-size:clamp(60px, 22vmin, 140px);
+    --gap:clamp(6px, 1.5vmin, 12px);
+    --radius:14px;
+    --shadow:0 6px 20px rgba(0,0,0,.35);
+  }
+  html,body{height:100%;margin:0;background:#0b0c10;color:var(--text);font-family:sans-serif;}
+  .app{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:16px;padding:clamp(12px,2.5vmin,24px);}
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;}
+  header h1{font-size:clamp(18px,2.6vmin,28px);margin:0;}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel);padding:10px 12px;border-radius:12px;}
+  .controls label{font-size:14px;color:var(--muted);}
+  select,button{appearance:none;background:#121722;color:var(--text);border:1px solid #2a2f3d;border-radius:10px;padding:8px 10px;font-size:14px;outline:none;}
+  button.primary{background:linear-gradient(180deg,#10b981,#0ea5e9);border:none;font-weight:600;}
+  .status{font-weight:600;padding:6px 10px;border-radius:10px;background:#0f131a;}
+  .score{margin-left:10px;font-weight:600;}
+  .board{display:grid;grid-template-columns:repeat(3,var(--cell-size));grid-template-rows:repeat(3,var(--cell-size));gap:var(--gap);padding:var(--gap);background:#111827;border-radius:var(--radius);}
+  .cell{display:grid;place-items:center;background:#0a0d15;border:1px solid #1c2130;border-radius:10px;cursor:pointer;transition:transform .2s ease, opacity .5s ease;font-size:clamp(28px,8vmin,60px);font-weight:900;line-height:1;outline:none;}
+  .cell.X{color:var(--x-color);}
+  .cell.O{color:var(--o-color);}
+  .cell.remove-next{transform:scale(0.75);}
+  .cell.fade-out{opacity:0;}
+  .win{animation:blink .22s steps(2) 0s 8;}
+  @keyframes blink{50%{filter:brightness(2);}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Noughts & Crosses</h1>
+    <div class="controls">
+      <label>X colour <select id="xColor"><option value="#e11d48" selected>Rose</option><option value="#10b981">Green</option></select></label>
+      <label>O colour <select id="oColor"><option value="#2563eb" selected>Blue</option><option value="#f59e0b">Amber</option></select></label>
+      <button id="resetBtn" class="primary">Restart</button>
+      <div id="status" class="status">Turn: X</div>
+      <div id="score" class="score">X: 0 – O: 0</div>
+    </div>
+  </header>
+  <main>
+    <div id="board" class="board"></div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const X='X',O='O';
+  const winLines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  const boardEl=document.getElementById('board');
+  const statusEl=document.getElementById('status');
+  const scoreEl=document.getElementById('score');
+  const resetBtn=document.getElementById('resetBtn');
+  const xColorSel=document.getElementById('xColor');
+  const oColorSel=document.getElementById('oColor');
+  let board=Array(9).fill(null);
+  let placements={X:[],O:[]};
+  let turn=X,gameOver=false,nextFirst=X;
+  let score=JSON.parse(localStorage.getItem('score')||'{"X":0,"O":0}');
+
+  function makeCell(i){
+    const btn=document.createElement('button');
+    btn.className='cell';
+    btn.dataset.index=i;
+    btn.addEventListener('click',()=>tryPlace(i));
+    return btn;
+  }
+  function renderBoard(){
+    boardEl.innerHTML='';
+    for(let i=0;i<9;i++)boardEl.appendChild(makeCell(i));
+    paint();
+  }
+  function paint(){
+    [...boardEl.children].forEach((cell,i)=>{
+      cell.textContent=board[i]||'';
+      cell.className='cell';
+      if(board[i])cell.classList.add(board[i]);
+      cell.disabled=gameOver||board[i];
+    });
+    // show which will be removed next
+    ['X','O'].forEach(p=>{
+      if(placements[p].length===3){
+        const idx=placements[p][0];
+        boardEl.children[idx].classList.add('remove-next');
+      }
+    });
+  }
+  function tryPlace(i){
+    if(gameOver||board[i])return;
+    board[i]=turn;
+    placements[turn].push(i);
+    if(placements[turn].length>3){
+      const oldest=placements[turn].shift();
+      const cell=boardEl.children[oldest];
+      cell.classList.add('fade-out');
+      setTimeout(()=>{board[oldest]=null;paint();},500);
+    }
+    paint();
+    const combo=checkWin(turn);
+    if(combo){highlight(combo);gameOver=true;score[turn]++;updateScore();return;}
+    turn=(turn===X?O:X);
+    statusEl.textContent=`Turn: ${turn}`;
+  }
+  function checkWin(p){
+    return winLines.find(([a,b,c])=>board[a]===p&&board[b]===p&&board[c]===p);
+  }
+  function highlight(c){c.forEach(i=>boardEl.children[i].classList.add('win'));statusEl.textContent=`${turn} wins! 🎉`;}
+  function updateScore(){scoreEl.textContent=`X: ${score.X} – O: ${score.O}`;localStorage.setItem('score',JSON.stringify(score));}
+  function reset(){
+    board.fill(null);placements={X:[],O:[]};gameOver=false;
+    nextFirst=(nextFirst===X?O:X);turn=nextFirst;
+    renderBoard();statusEl.textContent=`Turn: ${turn}`;
+  }
+  function setTheme(){document.documentElement.style.setProperty('--x-color',xColorSel.value);document.documentElement.style.setProperty('--o-color',oColorSel.value);}
+  resetBtn.addEventListener('click',reset);xColorSel.addEventListener('change',setTheme);oColorSel.addEventListener('change',setTheme);
+  setTheme();renderBoard();updateScore();
+})();
+</script>
+</body>
+</html>
