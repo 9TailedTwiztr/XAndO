@@ -109,32 +109,20 @@
   }
   function tryPlace(i){
     board[i] = turn;
-placements[turn].push(i);
-
-if(placements[turn].length > 3){
-  const oldest = placements[turn].shift();
-  const cell = boardEl.children[oldest];
-  cell.classList.add('fade-out');
-
-  setTimeout(() => {
-    board[oldest] = null; // remove the oldest piece
-    paint();              // re-render board
-
-    // now check for win AFTER removal
-    const combo = checkWin(turn);
-    if(combo){ 
-      highlight(combo);
-      gameOver = true;
-      score[turn]++;
-      updateScore();
-      return;
+ if(gameOver||board[i])return;
+    board[i]=turn;
+    placements[turn].push(i);
+    if(placements[turn].length>3){
+      const oldest=placements[turn].shift();
+      const cell=boardEl.children[oldest];
+      cell.classList.add('fade-out');
+      setTimeout(()=>{board[oldest]=null;paint();},500);
     }
-
-    // swap turn if no win
-    turn = (turn === "X" ? "O" : "X");
-    statusEl.textContent = `Turn: ${turn}`;
-
-  }, 500);
+    paint();
+    const combo=checkWin(turn);
+    if(combo){highlight(combo);gameOver=true;score[turn]++;updateScore();return;}
+    turn=(turn===X?O:X);
+    statusEl.textContent=`Turn: ${turn}`;  }, 500);
 
 } else {
   // No piece removed, normal win check
