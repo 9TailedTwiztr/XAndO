@@ -23,13 +23,14 @@
   .app{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:16px;padding:clamp(12px,2.5vmin,24px);}
   header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;}
   header h1{font-size:clamp(18px,2.6vmin,28px);margin:0;}
+  .board-container{display: flex;justify-content: center;align-items:center;height:calc(100vh-20px);padding:20px;box-sizing: border-box;}
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel);padding:10px 12px;border-radius:12px;}
   .controls label{font-size:14px;color:var(--muted);}
   select,button{appearance:none;background:#121722;color:var(--text);border:1px solid #2a2f3d;border-radius:10px;padding:8px 10px;font-size:14px;outline:none;}
   button.primary{background:linear-gradient(180deg,#10b981,#0ea5e9);border:none;font-weight:600;}
   .status{font-weight:600;padding:6px 10px;border-radius:10px;background:#0f131a;}
   .score{margin-left:10px;font-weight:600;}
-  .board{display:grid;align-items:center;grid-template-columns:repeat(3,var(--cell-size));grid-template-rows:repeat(3,var(--cell-size));gap:var(--gap);padding:var(--gap);background:#111827;border-radius:var(--radius);}
+  .board{display:grid;grid-template-columns:repeat(3,var(--cell-size));grid-template-rows:repeat(3,var(--cell-size));gap:var(--gap);padding:var(--gap);background:#111827;border-radius:var(--radius);}
   .cell{display:grid;place-items:center;background:#0a0d15;border:1px solid #1c2130;border-radius:10px;cursor:pointer;transition:transform .2s ease, opacity .5s ease;font-size:clamp(28px,8vmin,60px);font-weight:900;line-height:1;outline:none;}
   .cell.X{color:var(--x-color);}
   .cell.O{color:var(--o-color);}
@@ -51,9 +52,9 @@
       <div id="score" class="score">X: 0 – O: 0</div>
     </div>
   </header>
-  <main>
-    <div id="board" class="board"></div>
-  </main>
+  <main class="board-container">
+  <div id="board" class="board"></div>
+</main>
 </div>
 
 <script>
