@@ -30,6 +30,10 @@
   button.primary{background:linear-gradient(180deg,#10b981,#0ea5e9);border:none;font-weight:600;}
   .status{font-weight:600;padding:6px 10px;border-radius:10px;background:#0f131a;}
   .score{margin-left:10px;font-weight:600;}
+  #score-controls{display:flex;align-items:center;gap:10px;}
+  .icon-btn {background:none;border:none;padding:4px;cursor:pointer;display:flex;align-items:center;}
+  .icon-btn img {width:24px;height:24px;pointer-events:none;}
+  .icon-btn:hover img {filter:brightness(1.2); }
   .board{display:grid;grid-template-columns:repeat(3,var(--cell-size));grid-template-rows:repeat(3,var(--cell-size));gap:var(--gap);padding:var(--gap);background:#111827;border-radius:var(--radius);}
   .cell{display:grid;place-items:center;background:#0a0d15;border:1px solid #1c2130;border-radius:10px;cursor:pointer;transition:transform .2s ease, opacity .5s ease;font-size:clamp(28px,8vmin,60px);font-weight:900;line-height:1;outline:none;}
   .cell.X{color:var(--x-color);}
@@ -49,8 +53,12 @@
       <label>O colour <select id="oColor"><option value="#2563eb" selected>Blue</option><option value="#f59e0b">Amber</option></select></label>
       <button id="resetBtn" class="primary">Restart</button>
       <div id="status" class="status">Turn: X</div>
+      <div id="score-controls">
       <div id="score" class="score">X: 0 – O: 0</div>
-    </div>
+      <button id="resetScoreBtn" class="icon-btn" aria-label="Reset Score">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Undo_icon.svg/1024px-Undo_icon.svg.png" alt="Undo" />
+      </button>
+      </div>
   </header>
   <main class="board-container">
   <div id="board" class="board"></div>
@@ -128,6 +136,13 @@
   function setTheme(){document.documentElement.style.setProperty('--x-color',xColorSel.value);document.documentElement.style.setProperty('--o-color',oColorSel.value);}
   resetBtn.addEventListener('click',reset);xColorSel.addEventListener('change',setTheme);oColorSel.addEventListener('change',setTheme);
   setTheme();renderBoard();updateScore();
+  const resetScoreBtn = document.getElementById('resetScoreBtn');
+  resetScoreBtn.addEventListener('click', () => {
+  score = { X: 0, O: 0 };
+  localStorage.setItem('score', JSON.stringify(score));
+  scoreEl.textContent = `X: ${score.X} – O: ${score.O}`;
+});
+
 })();
 </script>
 </body>
