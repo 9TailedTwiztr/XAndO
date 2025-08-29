@@ -66,113 +66,165 @@
 </div>
 
 <script>
-  const boardEl = document.getElementById('board');
-  const scoreEl = document.getElementById('score');
-  const resetScoreBtn = document.getElementById('resetScoreBtn');
-  const xColorEl = document.getElementById('xColor');
-  const oColorEl = document.getElementById('oColor');
 
-  let board = Array(9).fill(null);
-  let currentPlayer = 'X';
-  let moves = { X: [], O: [] };
-  let score = JSON.parse(localStorage.getItem('score')) || { X: 0, O: 0 };
-  let starter = 'X'; // alternates after each restart
-  scoreEl.textContent = `X: ${score.X} – O: ${score.O}`;
+(() => {
 
-  // Create board
-  for (let i = 0; i < 9; i++) {
-    const cell = document.createElement('div');
-    cell.classList.add('cell');
-    cell.dataset.index = i;
-    cell.tabIndex = 0;
-    cell.addEventListener('click', () => handleMove(i));
-    cell.addEventListener('keydown', (e) => {
-      if (e.key === "Enter" || e.key === " ") handleMove(i);
-    });
-    boardEl.appendChild(cell);
+  const X='X',O='O';
+
+  const winLines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  const boardEl=document.getElementById('board');
+
+  const statusEl=document.getElementById('status');
+
+  const scoreEl=document.getElementById('score');
+
+  const resetBtn=document.getElementById('resetBtn');
+
+  const xColorSel=document.getElementById('xColor');
+
+  const oColorSel=document.getElementById('oColor');
+
+  let board=Array(9).fill(null);
+
+  let placements={X:[],O:[]};
+
+  let turn=X,gameOver=false,nextFirst=X;
+
+  let score=JSON.parse(localStorage.getItem('score')||'{"X":0,"O":0}');
+
+
+
+  function makeCell(i){
+
+    const btn=document.createElement('button');
+
+    btn.className='cell';
+
+    btn.dataset.index=i;
+
+    btn.addEventListener('click',()=>tryPlace(i));
+
+    return btn;
+
   }
 
-  function handleMove(index) {
-    if (board[index]) return; // already occupied
+  function renderBoard(){
 
-    const cell = boardEl.children[index];
-    const color = currentPlayer === 'X' ? xColorEl.value : oColorEl.value;
+    boardEl.innerHTML='';
 
-    // Place piece
-    board[index] = currentPlayer;
-    cell.textContent = currentPlayer;
-    cell.style.color = color;
-    moves[currentPlayer].push(index);
+    for(let i=0;i<9;i++)boardEl.appendChild(makeCell(i));
 
-    // Manage 3-piece rule
-    if (moves[currentPlayer].length > 3) {
-      const oldestIndex = moves[currentPlayer].shift(); // remove oldest from array
-      const oldestCell = boardEl.children[oldestIndex];
-      oldestCell.classList.remove('small'); // reset previous shrink
-      oldestCell.classList.add('fade-out');
-      setTimeout(() => {
-        board[oldestIndex] = null;
-        oldestCell.textContent = '';
-        oldestCell.classList.remove('fade-out');
-      }, 500); // fade duration
+    paint();
+
+  }
+
+  function paint(){
+
+    [...boardEl.children].forEach((cell,i)=>{
+
+      cell.textContent=board[i]||'';
+
+      cell.className='cell';
+
+      if(board[i])cell.classList.add(board[i]);
+
+      cell.disabled=gameOver||board[i];
+
+    });
+
+    // show which will be removed next
+
+    ['X','O'].forEach(p=>{
+
+      if(placements[p].length===3){
+
+        const idx=placements[p][0];
+
+        boardEl.children[idx].classList.add('remove-next');
+
+      }
+
+    });
+
+  }
+
+  function tryPlace(i){
+
+    if(gameOver||board[i])return;
+
+    board[i]=turn;
+
+    placements[turn].push(i);
+
+    if(placements[turn].length>3){
+
+      const oldest=placements[turn].shift();
+
+      const cell=boardEl.children[oldest];
+
+      cell.classList.add('fade-out');
+
+      setTimeout(()=>{board[oldest]=null;paint();},500);
+
     }
 
-    // Mark next-to-go (shrink oldest if 3 are on board)
-    markNextToGo();
+    paint();
 
-    // Check for win AFTER removal handled
-    setTimeout(() => {
-      if (checkWin(currentPlayer)) {
-        score[currentPlayer]++;
-        localStorage.setItem('score', JSON.stringify(score));
-        scoreEl.textContent = `X: ${score.X} – O: ${score.O}`;
-        restart();
-      } else if (board.every(cell => cell)) {
-        restart(); // draw
-      } else {
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-      }
-    }, 550); // ensure after fade-out
+    const combo=checkWin(turn);
+
+    if(combo){highlight(combo);gameOver=true;score[turn]++;updateScore();return;}
+
+    turn=(turn===X?O:X);
+
+    statusEl.textContent=`Turn: ${turn}`;
+
   }
 
-  function markNextToGo() {
-    // reset all small
-    [...boardEl.children].forEach(c => c.classList.remove('small'));
-    // shrink the oldest of current player if they have 3 pieces
-    ['X','O'].forEach(p => {
-      if (moves[p].length === 3) {
-        const oldestIndex = moves[p][0];
-        boardEl.children[oldestIndex].classList.add('small');
-      }
-    });
+  function checkWin(p){
+
+    return winLines.find(([a,b,c])=>board[a]===p&&board[b]===p&&board[c]===p);
+
   }
 
-  function checkWin(player) {
-    const wins = [
-      [0,1,2],[3,4,5],[6,7,8],
-      [0,3,6],[1,4,7],[2,5,8],
-      [0,4,8],[2,4,6]
-    ];
-    return wins.some(comb => comb.every(i => board[i] === player));
+  function highlight(c){c.forEach(i=>boardEl.children[i].classList.add('win'));statusEl.textContent=`${turn} wins! 🎉`;}
+
+  function updateScore(){scoreEl.textContent=`X: ${score.X} – O: ${score.O}`;localStorage.setItem('score',JSON.stringify(score));}
+
+  function reset(){
+
+    board.fill(null);placements={X:[],O:[]};gameOver=false;
+
+    nextFirst=(nextFirst===X?O:X);turn=nextFirst;
+
+    renderBoard();statusEl.textContent=`Turn: ${turn}`;
+
   }
 
-  function restart() {
-    board.fill(null);
-    moves = { X: [], O: [] };
-    [...boardEl.children].forEach(c => {
-      c.textContent = '';
-      c.classList.remove('small', 'fade-out');
-    });
-    // Alternate starting player
-    starter = starter === 'X' ? 'O' : 'X';
-    currentPlayer = starter;
-  }
+  function setTheme(){document.documentElement.style.setProperty('--x-color',xColorSel.value);document.documentElement.style.setProperty('--o-color',oColorSel.value);}
+
+  resetBtn.addEventListener('click',reset);xColorSel.addEventListener('change',setTheme);oColorSel.addEventListener('change',setTheme);
+
+  setTheme();renderBoard();updateScore();
+
+  const resetScoreBtn = document.getElementById('resetScoreBtn');
 
   resetScoreBtn.addEventListener('click', () => {
-    score = { X: 0, O: 0 };
-    localStorage.setItem('score', JSON.stringify(score));
-    scoreEl.textContent = `X: ${score.X} – O: ${score.O}`;
-  });
+
+  score = { X: 0, O: 0 };
+
+  localStorage.setItem('score', JSON.stringify(score));
+
+  scoreEl.textContent = `X: ${score.X} – O: ${score.O}`;
+
+});
+
+
+
+})();
+
 </script>
+
 </body>
+
 </html>
