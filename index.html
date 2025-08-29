@@ -19,6 +19,32 @@
     --radius:14px;
     --shadow:0 6px 20px rgba(0,0,0,.35);
   }
+  .color-picker {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.color-options {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.color-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff; /* for visibility on dark board */
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.color-circle.selected {
+  transform: scale(1.2);
+  border-color: #fbbf24; /* highlight selected color */
+}
+
   html,body{height:100%;margin:0;background:#0b0c10;color:var(--text);font-family:sans-serif;}
   .app{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:16px;padding:clamp(12px,2.5vmin,24px);}
   header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;}
@@ -49,8 +75,16 @@
   <header>
     <h1>Noughts & Crosses</h1>
     <div class="controls">
-      <label>X colour <select id="xColor"><option value="#e11d48" selected>Rose</option><option value="#10b981">Green</option></select></label>
-      <label>O colour <select id="oColor"><option value="#2563eb" selected>Blue</option><option value="#f59e0b">Amber</option></select></label>
+      <div class="color-picker">
+        <div>
+          <span>X Colour:</span>
+          <div id="xColorOptions" class="color-options"></div>
+        </div>
+        <div>
+          <span>O Colour:</span>
+          <div id="oColorOptions" class="color-options"></div>
+        </div>
+      </div>
       <button id="resetBtn" class="primary">Restart</button>
       <div id="status" class="status">Turn: X</div>
       <div id="score-controls">
@@ -221,6 +255,45 @@
   scoreEl.textContent = `X: ${score.X} – O: ${score.O}`;
 
 });
+const xColors = ['#F43F5E','#EF4444','#F97316','#DC2626','#F87171'];
+const oColors = ['#3B82F6','#14B8A6','#06B6D4','#6366F1','#60A5FA'];
+
+const xColorOptions = document.getElementById('xColorOptions');
+const oColorOptions = document.getElementById('oColorOptions');
+
+let selectedXColor = xColors[0];
+let selectedOColor = oColors[0];
+
+function createColorCircle(color, isX) {
+  const circle = document.createElement('div');
+  circle.className = 'color-circle';
+  circle.style.backgroundColor = color;
+  if((isX && color === selectedXColor) || (!isX && color === selectedOColor)){
+    circle.classList.add('selected');
+  }
+  circle.addEventListener('click', () => {
+    if(isX){
+      selectedXColor = color;
+      document.documentElement.style.setProperty('--x-color', selectedXColor);
+    } else {
+      selectedOColor = color;
+      document.documentElement.style.setProperty('--o-color', selectedOColor);
+    }
+    // update selected class
+    const siblings = isX ? xColorOptions.children : oColorOptions.children;
+    for(const c of siblings) c.classList.remove('selected');
+    circle.classList.add('selected');
+  });
+  return circle;
+}
+
+// Populate circles
+xColors.forEach(c => xColorOptions.appendChild(createColorCircle(c,true)));
+oColors.forEach(c => oColorOptions.appendChild(createColorCircle(c,false)));
+
+// Initialize colors on board
+document.documentElement.style.setProperty('--x-color', selectedXColor);
+document.documentElement.style.setProperty('--o-color', selectedOColor);
 
 
 
