@@ -19,31 +19,21 @@
     --radius:14px;
     --shadow:0 6px 20px rgba(0,0,0,.35);
   }
-  .color-picker {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.color-options {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.color-circle {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid #fff; /* for visibility on dark board */
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.color-circle.selected {
-  transform: scale(1.2);
-  border-color: #fbbf24; /* highlight selected color */
-}
+  /* color swatches UI */
+  .color-label { display:flex; flex-direction:column; gap:8px; font-size:14px; color:var(--muted); }
+  .swatches { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .swatch {
+    width:28px; height:28px; border-radius:50%;
+    border:2px solid transparent;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+    cursor:pointer;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .swatch:focus { outline:none; transform:translateY(-2px); box-shadow:0 6px 12px rgba(0,0,0,0.5); }
+  .swatch.selected { border-color: rgba(255,255,255,0.85); transform: translateY(-2px); }
+  .swatch[aria-pressed="true"] { border-color: rgba(255,255,255,0.85); }
+  .swatch.small { width:22px; height:22px; } /* optional smaller swatches */
 
   html,body{height:100%;margin:0;background:#0b0c10;color:var(--text);font-family:sans-serif;}
   .app{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:16px;padding:clamp(12px,2.5vmin,24px);}
@@ -75,16 +65,18 @@
   <header>
     <h1>Noughts & Crosses</h1>
     <div class="controls">
-      <div class="color-picker">
-        <div>
-          <span>X Colour:</span>
-          <div id="xColorOptions" class="color-options"></div>
-        </div>
-        <div>
-          <span>O Colour:</span>
-          <div id="oColorOptions" class="color-options"></div>
-        </div>
-      </div>
+     <!-- X / Red palette -->
+    <label class="color-label" id="xPaletteLabel">X colour
+      <!-- hidden input kept for backwards compatibility with existing JS -->
+      <input type="hidden" id="xColor" value="#F43F5E" />
+      <div class="swatches" role="radiogroup" aria-labelledby="xPaletteLabel" data-side="X"></div>
+      </label>
+    
+      <!-- O / Blue palette -->
+      <label class="color-label" id="oPaletteLabel">O colour
+        <input type="hidden" id="oColor" value="#3B82F6" />
+        <div class="swatches" role="radiogroup" aria-labelledby="oPaletteLabel" data-side="O"></div>
+      </label>
       <button id="resetBtn" class="primary">Restart</button>
       <div id="status" class="status">Turn: X</div>
       <div id="score-controls">
@@ -239,6 +231,97 @@
   }
 
   function setTheme(){document.documentElement.style.setProperty('--x-color',xColorSel.value);document.documentElement.style.setProperty('--o-color',oColorSel.value);}
+  // Color palettes (distinct and high-contrast options)
+const PALETTES = {
+  X: [
+    {name:'Rose', hex:'#F43F5E'},
+    {name:'Tomato', hex:'#EF4444'},
+    {name:'OrangeRed', hex:'#F97316'},
+    {name:'Crimson', hex:'#DC2626'},
+    {name:'Coral', hex:'#F87171'}
+  ],
+  O: [
+    {name:'SkyBlue', hex:'#3B82F6'},
+    {name:'Teal', hex:'#14B8A6'},
+    {name:'Cyan', hex:'#06B6D4'},
+    {name:'Indigo', hex:'#6366F1'},
+    {name:'LightBlue', hex:'#60A5FA'}
+  ]
+};
+
+function buildSwatches() {
+  // For both sides (X and O) find the container and hidden input
+  document.querySelectorAll('.swatches').forEach(container => {
+    const side = container.dataset.side; // "X" or "O"
+    const hiddenInput = document.getElementById(side === 'X' ? 'xColor' : 'oColor');
+    const palette = PALETTES[side];
+
+    // Clear existing
+    container.innerHTML = '';
+
+    palette.forEach((item, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'swatch';
+      btn.style.background = item.hex;
+      btn.setAttribute('aria-label', `${side} color ${item.name}`);
+      btn.setAttribute('role', 'radio');
+      btn.setAttribute('aria-checked', 'false');
+      btn.dataset.hex = item.hex;
+      btn.dataset.side = side;
+
+      // keyboard support: left/right to move between swatches (optional)
+      btn.addEventListener('keydown', (e) => {
+        const keys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'];
+        if (!keys.includes(e.key)) return;
+        e.preventDefault();
+        const buttons = Array.from(container.querySelectorAll('.swatch'));
+        const i = buttons.indexOf(e.currentTarget);
+        let next = i;
+        if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + buttons.length) % buttons.length;
+        if(e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % buttons.length;
+        buttons[next].focus();
+      });
+
+      btn.addEventListener('click', (ev) => {
+        selectSwatch(ev.currentTarget, hiddenInput, container);
+      });
+
+      container.appendChild(btn);
+    });
+
+    // Initialize selection from hidden input value or default first
+    let startHex = hiddenInput.value || palette[0].hex;
+    const firstMatch = container.querySelector(`.swatch[data-hex="${startHex}"]`);
+    (firstMatch || container.querySelector('.swatch')).classList.add('selected');
+    if(firstMatch) firstMatch.setAttribute('aria-checked', 'true');
+    // ensure hidden input matches
+    hiddenInput.value = (firstMatch && firstMatch.dataset.hex) || palette[0].hex;
+  });
+
+  // After building swatches, call setTheme() so CSS vars update immediately
+  if(typeof setTheme === 'function') setTheme();
+}
+
+  function selectSwatch(btn, hiddenInput, container) {
+    // remove previously selected
+    container.querySelectorAll('.swatch').forEach(s => {
+      s.classList.remove('selected');
+      s.setAttribute('aria-checked', 'false');
+    });
+    btn.classList.add('selected');
+    btn.setAttribute('aria-checked', 'true');
+  
+    // update hidden input and theme
+    hiddenInput.value = btn.dataset.hex;
+    if(typeof setTheme === 'function') setTheme();
+    // For compatibility with existing listeners that watch change events:
+    const changeEvent = new Event('change', { bubbles: true });
+    hiddenInput.dispatchEvent(changeEvent);
+  }
+  
+  // Call this once at startup (place after DOM elements exist)
+  buildSwatches();
 
   resetBtn.addEventListener('click',reset);xColorSel.addEventListener('change',setTheme);oColorSel.addEventListener('change',setTheme);
 
@@ -255,45 +338,6 @@
   scoreEl.textContent = `X: ${score.X} – O: ${score.O}`;
 
 });
-const xColors = ['#F43F5E','#EF4444','#F97316','#DC2626','#F87171'];
-const oColors = ['#3B82F6','#14B8A6','#06B6D4','#6366F1','#60A5FA'];
-
-const xColorOptions = document.getElementById('xColorOptions');
-const oColorOptions = document.getElementById('oColorOptions');
-
-let selectedXColor = xColors[0];
-let selectedOColor = oColors[0];
-
-function createColorCircle(color, isX) {
-  const circle = document.createElement('div');
-  circle.className = 'color-circle';
-  circle.style.backgroundColor = color;
-  if((isX && color === selectedXColor) || (!isX && color === selectedOColor)){
-    circle.classList.add('selected');
-  }
-  circle.addEventListener('click', () => {
-    if(isX){
-      selectedXColor = color;
-      document.documentElement.style.setProperty('--x-color', selectedXColor);
-    } else {
-      selectedOColor = color;
-      document.documentElement.style.setProperty('--o-color', selectedOColor);
-    }
-    // update selected class
-    const siblings = isX ? xColorOptions.children : oColorOptions.children;
-    for(const c of siblings) c.classList.remove('selected');
-    circle.classList.add('selected');
-  });
-  return circle;
-}
-
-// Populate circles
-xColors.forEach(c => xColorOptions.appendChild(createColorCircle(c,true)));
-oColors.forEach(c => oColorOptions.appendChild(createColorCircle(c,false)));
-
-// Initialize colors on board
-document.documentElement.style.setProperty('--x-color', selectedXColor);
-document.documentElement.style.setProperty('--o-color', selectedOColor);
 
 
 
