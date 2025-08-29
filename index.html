@@ -154,7 +154,15 @@
       }
 
     });
-
+    if (!gameOver) {
+    [...boardEl.children].forEach(c => c.classList.remove('remove-next'));
+    ['X', 'O'].forEach(p => {
+      if (placements[p].length === 3) {
+        const idx = placements[p][0];
+        boardEl.children[idx].classList.add('remove-next');
+      }
+    });
+  }
   }
 
   function tryPlace(i) {
@@ -170,8 +178,8 @@
     gameOver = true;
     score[turn]++;
     updateScore();
-    paint();
-    return; 
+    statusEl.textContent = `${turn} wins! 🎉`;
+    return;
   }
 
  
@@ -198,6 +206,11 @@
   }
 
   function highlight(c){c.forEach(i=>boardEl.children[i].classList.add('win'));statusEl.textContent=`${turn} wins! 🎉`;}
+  function highlight(indices) {
+  indices.forEach(i => {
+    boardEl.children[i].classList.add('win');
+  });
+}
 
   function updateScore(){scoreEl.textContent=`X: ${score.X} – O: ${score.O}`;localStorage.setItem('score',JSON.stringify(score));}
 
