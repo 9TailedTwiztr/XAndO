@@ -166,12 +166,23 @@
   }
 
   function tryPlace(i) {
-  if (gameOver || board[i]) return;
+  if (board[i] || gameOver) return;
 
+  // record the move
   board[i] = turn;
   placements[turn].push(i);
 
-  
+  // if >3 pieces, remove oldest
+  if (placements[turn].length > 3) {
+    const old = placements[turn].shift();
+    board[old] = null;
+    fadeOut(old);
+  }
+
+  // paint the board immediately so the new piece shows
+  paint();
+
+  // now check for win
   const combo = checkWin(turn);
   if (combo) {
     highlight(combo);
@@ -182,19 +193,8 @@
     return;
   }
 
- 
-  if (placements[turn].length > 3) {
-    const oldest = placements[turn].shift();
-    const cell = boardEl.children[oldest];
-    cell.classList.add('fade-out');
-    setTimeout(() => {
-      board[oldest] = null;
-      paint();
-    }, 500);
-  }
-
-  paint();
-  turn = (turn === X ? O : X);
+  // switch player if no win
+  turn = turn === 'X' ? 'O' : 'X';
   statusEl.textContent = `Turn: ${turn}`;
 }
 
