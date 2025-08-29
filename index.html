@@ -42,6 +42,14 @@
   .cell.fade-out{opacity:0;}
   .win{animation:blink .22s steps(2) 0s 8;}
   @keyframes blink{50%{filter:brightness(2);}}
+  .cell.win {
+  animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%   { transform: scale(1);     opacity: 1;   }
+    50%  { transform: scale(1.1);   opacity: 0.7; }
+    100% { transform: scale(1);     opacity: 1;   }
+  }
 </style>
 </head>
 <body>
