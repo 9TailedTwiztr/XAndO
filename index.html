@@ -149,36 +149,39 @@
 
   }
 
-  function tryPlace(i){
-
+   function tryPlace(i){
     if(gameOver||board[i])return;
 
+    // 1) place the piece and record it
     board[i]=turn;
-
     placements[turn].push(i);
 
-    if(placements[turn].length>3){
-
-      const oldest=placements[turn].shift();
-
-      const cell=boardEl.children[oldest];
-
-      cell.classList.add('fade-out');
-
-      setTimeout(()=>{board[oldest]=null;paint();},500);
-
-    }
-
+    // 2) paint immediately to show the new piece
     paint();
 
+    // 3) check for win BEFORE doing any removal of the oldest piece
     const combo=checkWin(turn);
+    if(combo){
+      highlight(combo);
+      gameOver=true;
+      score[turn]++;
+      updateScore();
+      return; // stop here — no removal, no further actions
+    }
 
-    if(combo){highlight(combo);gameOver=true;score[turn]++;updateScore();return;}
+    // 4) only if there's no win do we enforce the "max 3 pieces" rule
+    if(placements[turn].length>3){
+      const oldest=placements[turn].shift();
+      const cell=boardEl.children[oldest];
+      // visual fade
+      cell.classList.add('fade-out');
+      // after fade, clear the board slot and repaint
+      setTimeout(()=>{ board[oldest]=null; paint(); },500);
+    }
 
+    // 5) continue play
     turn=(turn===X?O:X);
-
     statusEl.textContent=`Turn: ${turn}`;
-
   }
 
   function checkWin(p){
