@@ -42,14 +42,6 @@
   .cell.fade-out{opacity:0;}
   .win{animation:blink .22s steps(2) 0s 8;}
   @keyframes blink{50%{filter:brightness(2);}}
-  .cell.win {
-  animation: pulse 1s infinite;
-  }
-  @keyframes pulse {
-    0%   { transform: scale(1);     opacity: 1;   }
-    50%  { transform: scale(1.1);   opacity: 0.7; }
-    100% { transform: scale(1);     opacity: 1;   }
-  }
 </style>
 </head>
 <body>
@@ -76,7 +68,7 @@
 <script>
 
 (() => {
-  
+
   const X='X',O='O';
 
   const winLines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -154,50 +146,40 @@
       }
 
     });
-    if (!gameOver) {
-    [...boardEl.children].forEach(c => c.classList.remove('remove-next'));
-    ['X', 'O'].forEach(p => {
-      if (placements[p].length === 3) {
-        const idx = placements[p][0];
-        boardEl.children[idx].classList.add('remove-next');
-      }
-    });
-  }
+
   }
 
-  function tryPlace(i) {
-  if (board[i] || gameOver) return;
+  function tryPlace(i){
 
-  // record the move
-  board[i] = turn;
-  placements[turn].push(i);
+    if(gameOver||board[i])return;
 
-  // if >3 pieces, remove oldest
-  if (placements[turn].length > 3) {
-    const old = placements[turn].shift();
-    board[old] = null;
-    fadeOut(old);
+    board[i]=turn;
+
+    placements[turn].push(i);
+
+    if(placements[turn].length>3){
+
+      const oldest=placements[turn].shift();
+
+      const cell=boardEl.children[oldest];
+
+      cell.classList.add('fade-out');
+
+      setTimeout(()=>{board[oldest]=null;paint();},500);
+
+    }
+
+    paint();
+
+    const combo=checkWin(turn);
+
+    if(combo){highlight(combo);gameOver=true;score[turn]++;updateScore();return;}
+
+    turn=(turn===X?O:X);
+
+    statusEl.textContent=`Turn: ${turn}`;
+
   }
-
-  // paint the board immediately so the new piece shows
-  paint();
-
-  // now check for win
-  const combo = checkWin(turn);
-  if (combo) {
-    highlight(combo);
-    gameOver = true;
-    score[turn]++;
-    updateScore();
-    statusEl.textContent = `${turn} wins! 🎉`;
-    return;
-  }
-
-  // switch player if no win
-  turn = turn === 'X' ? 'O' : 'X';
-  statusEl.textContent = `Turn: ${turn}`;
-}
-
 
   function checkWin(p){
 
@@ -206,11 +188,6 @@
   }
 
   function highlight(c){c.forEach(i=>boardEl.children[i].classList.add('win'));statusEl.textContent=`${turn} wins! 🎉`;}
-  function highlight(indices) {
-  indices.forEach(i => {
-    boardEl.children[i].classList.add('win');
-  });
-}
 
   function updateScore(){scoreEl.textContent=`X: ${score.X} – O: ${score.O}`;localStorage.setItem('score',JSON.stringify(score));}
 
