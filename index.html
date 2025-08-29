@@ -34,7 +34,27 @@
   .swatch.selected { border-color: rgba(255,255,255,0.85); transform: translateY(-2px); }
   .swatch[aria-pressed="true"] { border-color: rgba(255,255,255,0.85); }
   .swatch.small { width:22px; height:22px; } /* optional smaller swatches */
+.color-dropdown {
+  padding: 6px 8px;
+  border-radius: var(--radius, 6px);
+  border: 1px solid #444;
+  background-color: #111827;
+  color: #fff;
+  font-size: 14px;
+  appearance: none; /* remove default arrow for styling if desired */
+}
 
+.color-dropdown option {
+  padding: 4px 8px;
+  color: inherit;
+}
+
+/* Optional: add a small arrow for dropdown */
+.color-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
   html,body{height:100%;margin:0;background:#0b0c10;color:var(--text);font-family:sans-serif;}
   .app{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:16px;padding:clamp(12px,2.5vmin,24px);}
   header{display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;}
@@ -65,17 +85,26 @@
   <header>
     <h1>Noughts & Crosses</h1>
     <div class="controls">
-     <!-- X / Red palette -->
-    <label class="color-label" id="xPaletteLabel">X colour
-      <!-- hidden input kept for backwards compatibility with existing JS -->
-      <input type="hidden" id="xColor" value="#F43F5E" />
-      <div class="swatches" role="radiogroup" aria-labelledby="xPaletteLabel" data-side="X"></div>
+    <!-- X / Red dropdown -->
+    <label class="color-label">X Colour
+      <select id="xColor" class="color-dropdown">
+        <option value="#F43F5E" style="background:#F43F5E;color:#fff">Rose</option>
+        <option value="#EF4444" style="background:#EF4444;color:#fff">Tomato</option>
+        <option value="#F97316" style="background:#F97316;color:#fff">Orange Red</option>
+        <option value="#DC2626" style="background:#DC2626;color:#fff">Crimson</option>
+        <option value="#F87171" style="background:#F87171;color:#000">Coral</option>
+        </select>
       </label>
-    
-      <!-- O / Blue palette -->
-      <label class="color-label" id="oPaletteLabel">O colour
-        <input type="hidden" id="oColor" value="#3B82F6" />
-        <div class="swatches" role="radiogroup" aria-labelledby="oPaletteLabel" data-side="O"></div>
+
+      <!-- O / Blue dropdown -->
+      <label class="color-label">O Colour
+        <select id="oColor" class="color-dropdown">
+          <option value="#3B82F6" style="background:#3B82F6;color:#fff">Sky Blue</option>
+          <option value="#14B8A6" style="background:#14B8A6;color:#fff">Teal</option>
+          <option value="#06B6D4" style="background:#06B6D4;color:#000">Cyan</option>
+          <option value="#6366F1" style="background:#6366F1;color:#fff">Indigo</option>
+          <option value="#60A5FA" style="background:#60A5FA;color:#000">Light Blue</option>
+        </select>
       </label>
       <button id="resetBtn" class="primary">Restart</button>
       <div id="status" class="status">Turn: X</div>
